@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Emacs client
+GenericName=Emacs client
+Comment=Run Emacs inside Simple Terminal
+Exec=emacsclient -c
+Terminal=false
+Type=Application
+Encoding=UTF-8
+Icon=emacs
+Categories=System;Programming;
+Keywords=shell;prompt;command;commandline;cmd;
+StartupWMClass=Emacs

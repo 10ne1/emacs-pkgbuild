@@ -58,8 +58,8 @@ NOGZ="YES"        # Don't compress .el files.
 
 ################################################################################
 pkgname="emacs-git"
-pkgver=27.0.50.139793
-pkgrel=2
+pkgver=27.0.60.139942
+pkgrel=1
 pkgdesc="GNU Emacs. Development master branch."
 arch=('x86_64')
 url="http://www.gnu.org/software/emacs/"
@@ -69,12 +69,12 @@ makedepends=( 'git' )
 provides=('emacs' 'emacs-seq')
 conflicts=('emacs' 'emacs-seq')
 replaces=('emacs26-git' 'emacs-seq')
-source=("emacs-git::git://git.savannah.gnu.org/emacs.git")
+# source=("emacs-git::git://git.savannah.gnu.org/emacs.git")
 # If Savannah access is blocked for reasons, use Github instead.
 # Edit the config file of your local repo copy as well.
 #source=("emacs-git::git://github.com/emacs-mirror/emacs.git")
 options=(!strip)
-md5sums=('SKIP')
+# md5sums=('SKIP')
 ################################################################################
 
 ################################################################################
@@ -160,6 +160,7 @@ pkgver() {
 # Doing so, breaks incremental compilation.
 prepare() {
   cd "$srcdir/emacs-git"
+#  git clean -fXd
   [[ -x configure ]] || ( ./autogen.sh git && ./autogen.sh autoconf )
 }
 
@@ -261,7 +262,7 @@ fi
   # Please note that incremental compilation implies that you
   # are reusing your src directory!
   #
-  make
+  make -j6
 
   # You may need to run this if 'loaddefs.el' files become corrupt.
   #cd "$srcdir/emacs-git/lisp"
@@ -305,6 +306,12 @@ package() {
   chmod 775 "$pkgdir"/var/games/emacs
   chown -R root:games "$pkgdir"/var/games
 
+  install -m 755 ../../ec "$pkgdir"/usr/bin/ec
+
+  mkdir -p "$pkgdir"/home/adi/.local/share/applications
+  chmod 700 "$pkgdir"/home/adi
+  chmod 700 "$pkgdir"/home/adi/.local/share/applications
+  install -m 755 ../../ec.desktop "$pkgdir"/home/adi/.local/share/applications
 }
 
 ################################################################################
