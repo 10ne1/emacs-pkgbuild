@@ -93,7 +93,7 @@ if [[ $CLI == "YES" ]] ; then
 else
   pkgname="emacs-git"
 fi
-pkgver=30.0.50.166575
+pkgver=29.0.50.159473
 pkgrel=1
 pkgdesc="GNU Emacs. Development master branch."
 arch=('x86_64')
@@ -104,12 +104,12 @@ depends=("${depends_nox[@]}" 'harfbuzz')
 makedepends=('git')
 provides=('emacs')
 conflicts=('emacs')
-source=("emacs-git::git+https://git.savannah.gnu.org/git/emacs.git"
-        "nemacs")
+#source=("emacs-git::git+https://git.savannah.gnu.org/git/emacs.git"
+source=( "nemacs")
 options=(!strip)
 install=emacs-git.install
-b2sums=('SKIP'
-        '58e028b439d3c7cf03ea0be617b429a2c54e7aa1b8ca32b5ed489214daaa71e22c323de9662761ad2ce4de58e21dbe45ce6ce198f402686828574f8043d053d0')
+b2sums=('SKIP')
+#        '58e028b439d3c7cf03ea0be617b429a2c54e7aa1b8ca32b5ed489214daaa71e22c323de9662761ad2ce4de58e21dbe45ce6ce198f402686828574f8043d053d0')
 ################################################################################
 
 ################################################################################
@@ -241,6 +241,7 @@ pkgver() {
 # Doing so, breaks incremental compilation.
 prepare() {
   cd "$srcdir/emacs-git"
+  git clean -fXd
   [[ -x configure ]] || ( ./autogen.sh git && ./autogen.sh autoconf )
   mkdir -p "$srcdir/emacs-git/build"
 }
@@ -372,9 +373,9 @@ _conf+=('--program-transform-name=s/\([ec]tags\)/\1.emacs/')
   #cd ../build
 
   if [[ $TRAMPOLINES == "YES" ]] && [[ $JIT == "YES" ]] ; then
-    make trampolines;
+    make trampolines; -j12
   else
-    make
+    make -j12
   fi
 
   # Optional documentation formats.
@@ -409,6 +410,12 @@ package() {
   chmod 775 "$pkgdir"/var/games/emacs
   chown -R root:games "$pkgdir"/var/games
 
+  install -m 755 ../../ec "$pkgdir"/usr/bin/ec
+
+  mkdir -p "$pkgdir"/home/adi/.local/share/applications
+  chmod 700 "$pkgdir"/home/adi
+  chmod 700 "$pkgdir"/home/adi/.local/share/applications
+  install -m 755 ../../ec.desktop "$pkgdir"/home/adi/.local/share/applications
 }
 
 ################################################################################
