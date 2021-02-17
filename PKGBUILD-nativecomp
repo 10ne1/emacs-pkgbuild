@@ -1,4 +1,16 @@
-# Maintainer: Pedro A. López-Valencia <https://aur.archlinux.org/users/vorbote>
+# Maintainer: Andrew Whatson <https://aur.archlinux.org/account/flatwhatson>
+# Maintainer of emacs-git: Pedro A. López-Valencia <https://aur.archlinux.org/users/vorbote>
+
+################################################################################
+# The difference between this PKGBUILD and the one from `emacs-git` is that:
+# - this one builds emacs from `feature/native-comp` branch.
+# - built-in packages are native compiled by default.
+# - link-time optimization is disabled by default.
+#
+# Pre-compiling all built-in elisp modules takes *hours* on fast systems. You
+# can set FAST_BOOT="YES" to pre-compile the bare minimum, then you'll need to
+# manage native-compilation later (eg. with comp-deferred-compilation).
+################################################################################
 
 ################################################################################
 # CAVEAT LECTOR: This PKGBUILD is highly opinionated. I give you
@@ -54,37 +66,43 @@ MAGICK=           # ImageMagick 7 support. Deprecated (read the logs).
 		  #are doing.
                   # -->>If you just *believe* you need it, you don't.<<--
 NOGZ="YES"        # Don't compress .el files.
+FAST_BOOT=        # Only native-compile the bare minimum. Intended for use with
+                  # deferred compilation to native-compile on-demand at runtime.
+PROFILING=        # Enable gprof profiling support.
 ################################################################################
 
 ################################################################################
-pkgname="emacs-git"
-pkgver=28.0.50.145534
+pkgname="emacs-native-comp-git"
+pkgver=28.0.50.143742
 pkgrel=1
-pkgdesc="GNU Emacs. Development master branch."
-arch=('x86_64')
+pkgdesc="GNU Emacs. Development native-comp branch."
+arch=('x86_64' )
 url="http://www.gnu.org/software/emacs/"
-license=('GPL3')
-depends=( 'alsa-lib' 'gnutls' 'libxml2' 'jansson' 'libotf' 'harfbuzz' 'gpm' )
-makedepends=( 'git' )
+license=('GPL3' )
+depends=('alsa-lib' 'gnutls' 'libxml2' 'jansson' 'libotf' 'harfbuzz' 'gpm' 'libgccjit')
+makedepends=('git')
 provides=('emacs' 'emacs-seq')
-conflicts=('emacs' 'emacs-seq')
-replaces=('emacs26-git' 'emacs-seq')
-# source=("emacs-git::git://git.savannah.gnu.org/emacs.git")
+conflicts=('emacs' 'emacs26-git' 'emacs-27-git' 'emacs-git' 'emacs-seq')
+replaces=('emacs26-git' 'emacs27-git' 'emacs-git' 'emacs-seq')
+source=("emacs-git::git://git.savannah.gnu.org/emacs.git#branch=feature/native-comp")
 # If Savannah access is blocked for reasons, use Github instead.
 # Edit the config file of your local repo copy as well.
 #source=("emacs-git::git://github.com/emacs-mirror/emacs.git")
-# options=(!strip)
-# md5sums=('SKIP')
+md5sums=('SKIP')
 ################################################################################
 
 ################################################################################
 
-if [[ $LTO == "YES" ]] && [[ $CLANG != "YES" ]]; then
-  CFLAGS+=" -g -flto -fuse-linker-plugin"
-  CXXFLAGS+=" -g -flto -fuse-linker-plugin"
-else
-  CFLAGS+=" -g -flto"
-  CXXFLAGS+=" -g -flto"
+CFLAGS+=" -g"
+CXXFLAGS+=" -g"
+
+if [[ $LTO == "YES" ]]; then
+  CFLAGS+=" -flto"
+  CXXFLAGS+=" -flto"
+  if [[ $CLANG != "YES" ]]; then
+    CFLAGS+=" -fuse-linker-plugin"
+    CXXFLAGS+=" -fuse-linker-plugin"
+  fi
 fi
 
 if [[ $CLANG == "YES" ]]; then
@@ -97,6 +115,10 @@ if [[ $CLANG == "YES" ]]; then
   export CCFLAGS+=' -fuse-ld=lld' ;
   export CXXFLAGS+=' -fuse-ld=lld' ;
   makedepends+=( 'clang' 'lld' 'llvm') ;
+else
+  export LD="/usr/bin/ld.gold"
+  export CFLAGS+=" -fuse-ld=gold"
+  export CXXFLAGS+=" -fuse-ld=gold"
 fi
 
 if [[ $NOTKIT == "YES" ]]; then
@@ -160,7 +182,6 @@ pkgver() {
 # Doing so, breaks incremental compilation.
 prepare() {
   cd "$srcdir/emacs-git"
-#  git clean -fXd
   [[ -x configure ]] || ( ./autogen.sh git && ./autogen.sh autoconf )
 }
 
@@ -197,15 +218,15 @@ build() {
 ################################################################################
 
 if [[ $CLANG == "YES" ]]; then
-  _conf+=(
-    '--enable-autodepend'
- );
+  _conf+=( '--enable-autodepend' );
 fi
 
 if [[ $LTO == "YES" ]]; then
-  _conf+=(
-    '--enable-link-time-optimization'
-  );
+  _conf+=( '--enable-link-time-optimization' );
+fi
+
+if [[ $PROFILING == "YES" ]]; then
+  _conf+=( '--enable-profiling' );
 fi
 
 if [[ $CLI == "YES" ]]; then
@@ -226,8 +247,6 @@ fi
 
 if [[ $MAGICK == "YES" ]]; then
   _conf+=( '--with-imagemagick');
-else
-  _conf+=();
 fi
 
 if [[ $CAIRO == "YES" ]]; then
@@ -241,17 +260,10 @@ fi
 if [[ $NOGZ == "YES" ]]; then
   _conf+=( '--without-compress-install' );
 fi
-################################################################################
 
 ################################################################################
 
-  # Use gold with gcc, unconditionally.
-  #
-  if [[ ! $CLANG == "YES" ]]; then
-    export LD=/usr/bin/ld.gold
-    export CFLAGS+=" -s -fuse-ld=gold";
-    export CXXFLAGS+=" -s -fuse-ld=gold";
-  fi
+################################################################################
 
   ./configure "${_conf[@]}"
 
@@ -263,7 +275,11 @@ fi
   # Please note that incremental compilation implies that you
   # are reusing your src directory!
   #
-  make -j6
+  if [[ $FAST_BOOT == "YES" ]]; then
+    make NATIVE_FAST_BOOT=1
+  else
+    make NATIVE_FULL_AOT=1
+  fi
 
   # You may need to run this if 'loaddefs.el' files become corrupt.
   #cd "$srcdir/emacs-git/lisp"
@@ -307,12 +323,6 @@ package() {
   chmod 775 "$pkgdir"/var/games/emacs
   chown -R root:games "$pkgdir"/var/games
 
-  install -m 755 ../../ec "$pkgdir"/usr/bin/ec
-
-  mkdir -p "$pkgdir"/home/adi/.local/share/applications
-  chmod 700 "$pkgdir"/home/adi
-  chmod 700 "$pkgdir"/home/adi/.local/share/applications
-  install -m 755 ../../ec.desktop "$pkgdir"/home/adi/.local/share/applications
 }
 
 ################################################################################
