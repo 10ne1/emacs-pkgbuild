@@ -40,7 +40,7 @@ JIT="YES"         # Enable native just-in-time compilation with libgccjit availa
                   #    (setq native-compile-prune-cache t)
                   # to delete old versions.
 
-AOT=              # Compile all elisp files provided by upstream.
+AOT="YES"              # Compile all elisp files provided by upstream.
 
 TRAMPOLINES=      # Compile jitted elisp files with trampolines.
 
@@ -51,11 +51,11 @@ GPM=              # Mouse support in Linux console using gpmd.
 NOTKIT=           # Use no toolkit widgets. Like B&W Twm (001d sk00l).
                   # Bitmap fonts only, 1337!
                
-PGTK=             # Use native GTK3 build. Supports Wayland, yay! Still
+PGTK="YES"        # Use native GTK3 build. Supports Wayland, yay! Still
                   # has some problems if running under Xorg. Remember,
                   # this is my personal build file!
 
-GTK3="YES"        # GTK3 old windowing interface.
+GTK3=             # GTK3 old windowing interface.
 
 LUCID=            # Use the lucid, a.k.a athena, toolkit. Like XEmacs, sorta.
                   #
@@ -72,7 +72,7 @@ ALSA=             # Linux sound support.
 
 NOCAIRO=          # Disable here. 
                
-XWIDGETS=         # Use GTK+ widgets pulled from webkit2gtk. Usable.
+XWIDGETS="YES"    # Use GTK+ widgets pulled from webkit2gtk. Usable.
 
 SITTER="YES"      # Use tree-sitter incremental language parsing.
                
