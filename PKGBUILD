@@ -93,7 +93,7 @@ if [[ $CLI == "YES" ]] ; then
 else
   pkgname="emacs-git"
 fi
-pkgver=29.0.50.159473
+pkgver=29.1.90.165782
 pkgrel=1
 pkgdesc="GNU Emacs. Development master branch."
 arch=('x86_64')
@@ -410,12 +410,12 @@ package() {
   chmod 775 "$pkgdir"/var/games/emacs
   chown -R root:games "$pkgdir"/var/games
 
-  install -m 755 ../../ec "$pkgdir"/usr/bin/ec
+  install -m 755 $srcdir/../ec "$pkgdir"/usr/bin/ec
 
   mkdir -p "$pkgdir"/home/adi/.local/share/applications
   chmod 700 "$pkgdir"/home/adi
   chmod 700 "$pkgdir"/home/adi/.local/share/applications
-  install -m 755 ../../ec.desktop "$pkgdir"/home/adi/.local/share/applications
+  install -m 755 $srcdir/../ec.desktop "$pkgdir"/home/adi/.local/share/applications
 }
 
 ################################################################################
